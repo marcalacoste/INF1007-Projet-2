@@ -20,6 +20,9 @@ class JeuDeDonnees:
         self.file = open(path, "r", encoding = "utf8")
         self.data = pd.read_csv(self.file)
 
+    def __len__(self):
+        return len(self.data.index)
+
     def head(self, quantite_a_garder):
         self.data = self.data.head(quantite_a_garder)
 
