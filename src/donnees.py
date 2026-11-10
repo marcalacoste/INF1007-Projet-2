@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import datetime
 
 class JeuDeDonnees:
     colonnes_utiles = [
@@ -10,7 +11,8 @@ class JeuDeDonnees:
         "Problem (formerly Complaint Type)",
         "Borough",
         "Latitude",
-        "Longitude"
+        "Longitude",
+        "Resolution Time (hours)"
     ]
 
     def __init__(self, path):
@@ -50,8 +52,16 @@ class JeuDeDonnees:
         plt.savefig(os.path.join("donnees", "graphique.png"), bbox_inches = "tight")
 
     def calculer_temps_resolution(self):
+        format = "%m/%d/%Y %I:%M:%S %p"
+        valeurs = []
         for index, row in self.data.iterrows():
-            print(row["Created Date"], row["Closed Date"])
+            cree = datetime.datetime.strptime(row["Created Date"], format)
+            ferme = datetime.datetime.strptime(row["Closed Date"], format)
+
+            difference = ferme - cree
+            difference = difference.total_seconds()/3600
+            valeurs.append(difference)
+        self.data["Resolution Time (hours)"] = valeurs
             
     
 

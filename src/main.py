@@ -8,4 +8,5 @@ donnees.drop_lignes_incompletes()
 # donnees.show_statistics()
 # donnees.creer_graphique()
 donnees.calculer_temps_resolution()
+donnees.show_statistics()
 
