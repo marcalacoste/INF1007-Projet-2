@@ -14,6 +14,8 @@ def test_colonnes_inutiles():
     donnees = JeuDeDonnees(os.path.join("donnees", "donnees.csv"))
     donnees.head(50000)
     donnees.drop_colonnes_inutiles()
+    donnees.calculer_temps_resolution()
+    donnees.ajouter_donnees_creation()
     assert len(donnees.data.columns) == len(JeuDeDonnees.colonnes_utiles)
 
 def test_lignes_incompletes():
