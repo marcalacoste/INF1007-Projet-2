@@ -12,7 +12,11 @@ class JeuDeDonnees:
         "Borough",
         "Latitude",
         "Longitude",
-        "Resolution Time (hours)"
+        "Resolution Time (hours)",
+        "Created Month",
+        "Created Day",
+        "Created Hour",
+        "Created Minute"
     ]
 
     def __init__(self, path):
@@ -33,10 +37,10 @@ class JeuDeDonnees:
     def drop_colonnes_inutiles(self):
         for colonne in self.data.columns:
             if colonne not in JeuDeDonnees.colonnes_utiles:
-                self.data = self.data.drop(colonne, axis = 1)
+                self.data.drop(colonne, axis = 1, inplace = True)
 
     def drop_lignes_incompletes(self):
-        self.data = self.data.dropna()
+        self.data.dropna(inplace = True)
 
     def creer_graphique(self):
         data = self.data.groupby("Problem (formerly Complaint Type)")["Created Date"].count()
@@ -61,8 +65,43 @@ class JeuDeDonnees:
             difference = ferme - cree
             difference = difference.total_seconds()/3600
             valeurs.append(difference)
+
         self.data["Resolution Time (hours)"] = valeurs
-            
+
+        # On enlève les rangées avec un temps négatif
+        rows = self.data[self.data["Resolution Time (hours)"] < 0].index
+        self.data.drop(rows, inplace = True)
+        return
+
+    def ajouter_donnees_creation(self):
+        format = "%m/%d/%Y %I:%M:%S %p"
+        mois, jour, heure, minute = [], [], [], []
+        for index, row in self.data.iterrows():
+            cree = datetime.datetime.strptime(row["Created Date"], format)
+            mois.append(cree.month)
+            jour.append(cree.day)
+            heure.append(cree.hour)
+            minute.append(cree.minute)
+        
+
+        self.data["Created Month"] = mois
+        self.data["Created Day"] = jour
+        self.data["Created Hour"] = heure
+        self.data["Created Minute"] = minute
+        
+
+    def moyenne(self):
+        total = 0
+        for index, row in self.data.iterrows():
+            total += row["Resolution Time (hours)"]
+        return total/len(self)
+
+    def setup_donnees(self, quantite):
+        self.head(quantite)
+        self.drop_colonnes_inutiles()
+        self.drop_lignes_incompletes()
+        self.calculer_temps_resolution()
+        self.ajouter_donnees_creation()
     
 
 
