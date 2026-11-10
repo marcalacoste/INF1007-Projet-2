@@ -48,6 +48,11 @@ class JeuDeDonnees:
         pie = ax.pie(data.values)
         ax.pie_label(pie, labels = labels, rotate = True, distance = 1.001)
         plt.savefig(os.path.join("donnees", "graphique.png"), bbox_inches = "tight")
+
+    def calculer_temps_resolution(self):
+        for index, row in self.data.iterrows():
+            print(row["Created Date"], row["Closed Date"])
+            
     
 
 
