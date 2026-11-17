@@ -24,7 +24,7 @@ from modele import Modele
 
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOSSIER_MODELES = os.path.join(RACINE, "modeles")
-FICHIER_MODELE = os.path.join(DOSSIER_MODELES, "modele_311.joblib")
+FICHIER_MODELE = os.path.join(DOSSIER_MODELES, "modele.pk1")
 FICHIER_META = os.path.join(DOSSIER_MODELES, "metadonnees.json")
 FICHIER_HISTORIQUE = os.path.join(DOSSIER_MODELES, "historique_predictions.csv")
 FICHIER_DONNEES = os.path.join(RACINE, "donnees", "donnees.csv")
