@@ -108,13 +108,20 @@ class JeuDeDonnees:
     def setup_donnees(self, quantite: int):
         """Exécute toutes les étapes pour créer un jeu de données
         qui peut entraîner le modèle ensuite.
-        
+
         On prend quantite de données dans le jeu de données"""
         self.head(quantite)
         self.drop_colonnes_inutiles()
         self.drop_lignes_incompletes()
         self.calculer_temps_resolution()
         self.ajouter_donnees_creation()
+
+    def enlever_temps_resolution_hauts(self, limite):
+        # Test si limite < 0
+        # Test si la colonne temps de resolution existe
+        rows = self.data[self.data["Resolution Time (hours)"] > limite].index
+        self.data.drop(rows, inplace = True)
+
     
 
 
