@@ -55,12 +55,14 @@ class Modele:
         self.preprocessor = ColumnTransformer([("numeric", self.numeric_pipeline,self. numeric_features), ("categorical", self.categorical_pipeline, self.categorical_features)])
 
     def baseline(self):
+        """Retourne les prédictions du modèle trivial (moyenne)"""
         model = DummyRegressor(strategy="median")
         model.fit(self.X_train, self.y_train)
         predictions = model.predict(self.X_test)
         return predictions
 
     def linear(self):
+        """Retourne les prédictions d'une régression linéaire"""
         model = Pipeline([("preprocessing", self.preprocessor), ("regressor", LinearRegression())])
         model.fit(self.X_train, self.y_train)
         predictions = model.predict(self.X_test)
@@ -68,6 +70,7 @@ class Modele:
 
 
     def forest(self):
+        """Retourne les prédictions d'une forêt aléatoire"""
         model = Pipeline([
             ("preprocessing", self.preprocessor),
             ("regressor", RandomForestRegressor(
@@ -83,7 +86,8 @@ class Modele:
         predictions = model.predict(self.X_test)
         return predictions
 
-    def mae(self, predictions):
+    def mae(self, predictions) -> float:
+        """Retourne la Mean Absolute Error (MAE) des prédction"""
         return mean_absolute_error(self.y_test, predictions)
     
 modele = Modele()
