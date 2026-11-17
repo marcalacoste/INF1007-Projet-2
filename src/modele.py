@@ -85,3 +85,8 @@ class Modele:
 
     def mae(self, predictions):
         return mean_absolute_error(self.y_test, predictions)
+    
+modele = Modele()
+predictions = modele.forest()
+print(modele.mae(predictions))
+print(modele.donnees.moyenne())
