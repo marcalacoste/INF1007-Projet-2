@@ -266,7 +266,7 @@ def main() -> None:
     st.title("🏙️ NYC 311 — Durée de résolution")
     st.write("Estimation du temps de fermeture d'une plainte à New York.")
     st.caption("Projet pédagogique : ce résultat n'est pas un délai officiel.")
-
+    application, meta = charger_application()
     try:
         with st.spinner("Chargement du modèle..."):
             application, meta = charger_application()

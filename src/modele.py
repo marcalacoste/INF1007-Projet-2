@@ -122,6 +122,9 @@ class Modele:
         Ne va pas sauvegarder si le fichier existe déjà, à moins que force == True"""
         if force or not os.path.exists(fichier):
             colonnes = list(self.donnees.data.columns)[2:]
+            # On enlève la colonne Resolution Time (hours)
+            index = colonnes.index("Resolution Time (hours)")
+            colonnes = colonnes[:index]+colonnes[index + 1:]
             problem = list(np.sort(self.donnees.data["Problem (formerly Complaint Type)"].unique()))
             borough = list(np.sort(self.donnees.data["Borough"].unique()))
             agency = list(np.sort(self.donnees.data["Agency"].unique()))
@@ -138,8 +141,8 @@ class Modele:
                     "Borough": borough,
                     "Agency": agency
                 },
-                "numerique": {
-                    "Latitue": latitude,
+                "numeriques": {
+                    "Latitude": latitude,
                     "Longitude": longitude,
                     "Created Month": [1, 12],
                     "Created Day": [1,31],

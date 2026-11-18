@@ -5,7 +5,6 @@
     "Borough",
     "Latitude",
     "Longitude",
-    "Resolution Time (hours)",
     "Created Month",
     "Created Day",
     "Created Hour",
@@ -177,8 +176,8 @@
       "TLC"
     ]
   },
-  "numerique": {
-    "Latitue": [
+  "numeriques": {
+    "Latitude": [
       40.50073707574,
       40.91282765275
     ],

@@ -1,7 +1,6 @@
 from donnees import JeuDeDonnees
 from modele import Modele
 import os
-import numpy
 
 donnees = JeuDeDonnees(os.path.join("donnees", "donnees.csv"))
 donnees.setup_donnees(50000)
