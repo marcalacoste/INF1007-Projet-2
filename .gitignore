@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+modeles/*.pk1
+modeles/*.joblib
+modeles/historique_predictions*.csv
