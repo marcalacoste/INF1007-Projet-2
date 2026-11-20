@@ -1,3 +1,7 @@
 pytest
 pandas
 matplotlib
+abc
+joblib
+streamlit
+sklearn
