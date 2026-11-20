@@ -414,10 +414,26 @@ def afficher_historique() -> None:
         st.warning(f"Historique indisponible : {erreur}")
 
 
+<<<<<<< HEAD
 def changer_page(page: str) -> None:
     """Change de page sans effacer le résultat conservé en session."""
     st.session_state["page_active"] = page
 
+=======
+def main() -> None:
+    """Affiche les champs issus du JSON, la prédiction et l'historique."""
+    st.set_page_config(page_title="NYC 311 — Prédiction", page_icon="🏙️")
+    st.title("🏙️ NYC 311 — Durée de résolution")
+    st.write("Estimation du temps de fermeture d'une plainte à New York.")
+    st.caption("Projet pédagogique : ce résultat n'est pas un délai officiel.")
+    application, meta = charger_application()
+    try:
+        with st.spinner("Chargement du modèle..."):
+            application, meta = charger_application()
+    except (OSError, ValueError, KeyError, ImportError, AttributeError, json.JSONDecodeError) as erreur:
+        st.error(f"Impossible de charger le modèle : {erreur}")
+        st.stop()
+>>>>>>> main
 
 def page_prediction(application: Application, meta: dict) -> None:
     """Collecte les caractéristiques, puis enregistre la prédiction."""

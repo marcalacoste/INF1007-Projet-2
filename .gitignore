@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -5,3 +6,6 @@ __pycache__/
 modeles/*.pk1
 modeles/*.joblib
 modeles/historique_predictions*.csv
+=======
+modeles/modele.pk1
+>>>>>>> main
