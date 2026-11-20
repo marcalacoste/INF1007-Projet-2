@@ -24,10 +24,10 @@ def modele_sans_chargement(y_train: list[float], y_test: list[float]) -> Modele:
     return modele
 
 
-def test_baseline_utilise_mediane() -> None:
-    """La référence doit prédire la médiane du jeu d'entraînement."""
+def test_baseline_utilise_moyenne() -> None:
+    """La référence doit prédire la moyenne du jeu d'entraînement."""
     modele = modele_sans_chargement([2, 4, 100], [1, 7])
-    assert modele.baseline() == pytest.approx([4, 4])
+    assert modele.baseline() == pytest.approx([35+1/3, 35+1/3])
 
 
 def test_baseline_taille_predictions() -> None:
