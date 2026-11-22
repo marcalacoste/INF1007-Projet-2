@@ -3,6 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import datetime
 
+RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FICHIER_GRAPHIQUE = os.path.join(RACINE, "donnees", "graphique.png")
+
 class JeuDeDonnees:
     """Classe qui contient le jeu de données pour entraîner le modèle"""
     colonnes_utiles = [
@@ -60,7 +63,7 @@ class JeuDeDonnees:
         fig, ax = plt.subplots()
         pie = ax.pie(data.values)
         ax.pie_label(pie, labels = labels, rotate = True, distance = 1.001)
-        plt.savefig(os.path.join("donnees", "graphique.png"), bbox_inches = "tight")
+        plt.savefig(FICHIER_GRAPHIQUE, bbox_inches = "tight")
 
     def calculer_temps_resolution(self):
         """Calcule et ajoute le temps de résolution de la plainte au jeu de données"""
@@ -117,8 +120,10 @@ class JeuDeDonnees:
         self.ajouter_donnees_creation()
 
     def enlever_temps_resolution_hauts(self, limite):
-        # Test si limite < 0
-        # Test si la colonne temps de resolution existe
+        if limite <= 0:
+            raise ValueError("La limite doit être plus grande que 0")
+        if not "Resolution Time (hours)" in self.data.index:
+            raise ValueError("La colonne du temps de résolution n'existe pas encore dans le jeu de données")
         rows = self.data[self.data["Resolution Time (hours)"] > limite].index
         self.data.drop(rows, inplace = True)
 

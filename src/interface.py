@@ -154,7 +154,7 @@ def charger_application() -> tuple[Application, dict[str, Any]]:
         raise FileNotFoundError(f"Fichier de données introuvable : {FICHIER_DONNEES}")
     modele.forest()
     modele.sauvegarder_modele()
-    meta = modele.creer_metadonnees(FICHIER_META, force = True)
+    meta = modele.creer_metadonnees(FICHIER_META)
     return Application(modele, meta), meta
 
 
@@ -369,7 +369,7 @@ def page_prediction(application: Application, meta: dict) -> None:
     st.rerun()
 
 
-def page_resultats(application: Application, meta: dict) -> None:
+def page_resultats(application: Application):
     """Présente le dernier résultat et les performances sur une page indépendante."""
     st.subheader("Résultats")
     resultat = st.session_state.get("dernier_resultat")
@@ -392,7 +392,7 @@ def page_resultats(application: Application, meta: dict) -> None:
         afficher_graphique(application, resultat)
 
 
-def main() -> None:
+def preparer_interface_graphique():
     """Gère la navigation entre prédiction, résultats et historique."""
     st.set_page_config(page_title="NYC 311 — Prédiction", page_icon="🏙️", layout="wide")
     st.title("🏙️ NYC 311 — Durée de résolution")
@@ -414,10 +414,7 @@ def main() -> None:
     if page == "Prédiction":
         page_prediction(application, meta)
     elif page == "Résultats":
-        page_resultats(application, meta)
+        page_resultats(application)
     else:
         afficher_historique()
 
-
-if __name__ == "__main__":
-    main()

@@ -12,10 +12,16 @@ import joblib
 import os
 import numpy as np
 
+RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DOSSIER_MODELES = os.path.join(RACINE, "modeles")
+FICHIER_MODELE = os.path.join(DOSSIER_MODELES, "modele.pk1")
+FICHIER_META = os.path.join(DOSSIER_MODELES, "metadonnees.json")
+FICHIER_DONNEES = os.path.join(RACINE, "donnees", "donnees.csv")
+
 
 class Modele:
     def __init__(self):
-        self.donnees = JeuDeDonnees(os.path.join("donnees", "donnees.csv"))
+        self.donnees = JeuDeDonnees(FICHIER_DONNEES)
         self.donnees.setup_donnees(50000)
 
         self.features = [
@@ -92,20 +98,18 @@ class Modele:
         """Sauvegarde les prédictions du modèle en utilisant joblib
         
         Ne va pas sauvegarder si le fichier existe déjà, à moins que force == True"""
-        path = os.path.join("modeles", "modele.pk1")
-        if force or not os.path.exists(path):
-            joblib.dump(self.modele, path)
+        if force or not os.path.exists(FICHIER_MODELE):
+            joblib.dump(self.modele, FICHIER_MODELE)
         
 
     def charger_modele(self):
         """Charge les prédictions du modèles si elles ont déjà été sauvegardées"""
-        path = os.path.join("modeles", "modele.pk1")
-        if os.path.exists(path):
-            self.modele = joblib.load(path)
+        if os.path.exists(FICHIER_MODELE):
+            self.modele = joblib.load(FICHIER_MODELE)
             self.predictions = self.modele.predict(self.X_test)
             return self.modele
         else:
-            raise ValueError("Il n'y a pas de modèle à charger dans le dossier modeles")
+            raise FileNotFoundError("Il n'y a pas de modèle à charger dans le dossier modeles")
 
     def creer_metadonnees(self, fichier: str, force: bool = False) -> dict:
         """Crée le fichier de metadonnées

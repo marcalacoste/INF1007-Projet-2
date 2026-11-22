@@ -1,16 +1,8 @@
-"""Tests unitaires des méthodes de référence et d'évaluation du modèle.
-
-Les tests utilisent des données synthétiques et ne chargent pas le CSV NYC 311.
-"""
-
-from pathlib import Path
 import sys
-
+sys.path.insert(0,"src")
 import numpy as np
 import pandas as pd
 import pytest
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from modele import Modele
 
 
