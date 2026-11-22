@@ -5,15 +5,11 @@ import os
 from abc import ABC, abstractmethod
 from datetime import date, datetime, time
 from typing import Any
-import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
-from sklearn.dummy import DummyRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error
-from sklearn.pipeline import Pipeline
 from modele import Modele
+from donnees import JeuDeDonnees
 
 # Pour désactiver tous les warnings de Streamlit
 import logging
@@ -119,7 +115,7 @@ class VariableNumerique(Variable):
 class Application:
     """Contient le modèle et les objets qui valident chaque caractéristique."""
 
-    def __init__(self, modele: object, metadonnees: dict) -> None:
+    def __init__(self, modele: Modele, metadonnees: dict) -> None:
         self._modele = modele
         self._metadonnees = metadonnees
         self._variables = {}
@@ -127,6 +123,8 @@ class Application:
             self._variables[nom] = VariableCategorielle(nom, choix)
         for nom, limites in metadonnees["numeriques"].items():
             self._variables[nom] = VariableNumerique(nom, limites[0], limites[1])
+        self._donnees = JeuDeDonnees(os.path.join(RACINE, FICHIER_DONNEES))
+        self._donnees.setup_donnees(50000)
 
     def predire(self, valeurs: dict[str, object]) -> float:
         """Valide toutes les variables et prédit une durée non négative en heures."""
@@ -136,7 +134,7 @@ class Application:
                 raise SaisieInvalideError(f"Métadonnées incomplètes pour {nom}.")
             saisie[nom] = self._variables[nom].valider(valeurs.get(nom))
         tableau = pd.DataFrame([saisie], columns=self._metadonnees["colonnes"])
-        resultat = float(self._modele.predict(tableau)[0])
+        resultat = float(self._modele.modele.predict(tableau)[0])
         if not math.isfinite(resultat):
             raise SaisieInvalideError("Le modèle a produit un résultat invalide.")
         return max(0.0, resultat)
@@ -226,16 +224,17 @@ def enregistrer_prediction(valeurs: dict[str, object], duree: float,
         ecrivain.writerow(ligne)
 
 
-def afficher_graphique(application: Application, meta: dict, probleme: str) -> None:
+def afficher_graphique(application: Application, resultat) -> None:
     """Compare les erreurs du Random Forest et du modèle de référence."""
-    donnees = application._modele.donnees.data
-    donnees = donnees.data[donnees.data["Problem (formerly Complaint Type)"] == probleme]
+    donnees = application._donnees
+    donnees = donnees.data[donnees.data["Problem (formerly Complaint Type)"] == resultat["probleme"]]
     
     fig, ax = plt.subplots(figsize=(7, 3))
-    ax.scatter(donnees)
-    ax.set_title("Erreur moyenne des modèles")
-    ax.set_xlabel("MAE (heures) — plus petit = meilleur")
-    ax.set_ylabel("Modèle")
+    y, _, _ = ax.hist(donnees["Resolution Time (hours)"], label = "Tous les appels")
+    ax.vlines(resultat["duree"], 0, y.max(), label = "Cette prédiction", color = "red")
+    ax.set_title("Temps de réponse pour ce type de problème")
+    ax.set_xlabel("Temps de réponse (heures)")
+    ax.set_ylabel("Quantité d'appels")
     ax.legend()
     fig.tight_layout()
     st.pyplot(fig)
@@ -389,10 +388,8 @@ def page_resultats(application: Application, meta: dict) -> None:
         if st.session_state.get("alerte_historique"):
             st.warning("Résultat calculé, mais historique non enregistré : " +
                        st.session_state["alerte_historique"])
-    st.subheader("Performance du modèle")
-    st.write(f"Random Forest : **{meta['mae_heures']:.1f} h** d'erreur moyenne ; "
-             f"référence : **{meta['mae_reference_heures']:.1f} h**.")
-    afficher_graphique(application, meta, resultat['probleme'])
+        st.subheader("Performance du modèle")
+        afficher_graphique(application, resultat)
 
 
 def main() -> None:
@@ -408,7 +405,7 @@ def main() -> None:
                           type="primary" if st.session_state["page_active"] == page else "secondary",
                           on_click=changer_page, args=(page,))
     try:
-        with st.spinner("Chargement du modèle (premier lancement : entraînement possible)..."):
+        with st.spinner("Chargement de l\'application, veuillez patienter..."):
             application, meta = charger_application()
     except (OSError, ValueError, KeyError, ImportError, AttributeError, json.JSONDecodeError) as erreur:
         st.error(f"Impossible de charger le modèle : {erreur}")

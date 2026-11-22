@@ -23,7 +23,7 @@ class JeuDeDonnees:
     def __init__(self, path: str):
         self.path = path
         self.file = open(path, "r", encoding = "utf8")
-        self.data = pd.read_csv(self.file)
+        self.data = pd.read_csv(self.file, low_memory = False)
 
     def __len__(self):
         return len(self.data.index)

@@ -4,7 +4,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.linear_model import LinearRegression
 from sklearn.dummy import DummyRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.ensemble import RandomForestRegressor
@@ -12,6 +11,7 @@ import json
 import joblib
 import os
 import numpy as np
+
 
 class Modele:
     def __init__(self):
@@ -147,9 +147,7 @@ class Modele:
                     "QUEENS": [lat_avg["QUEENS"], lon_avg["QUEENS"]],
                     "STATEN ISLAND": [lat_avg["STATEN ISLAND"], lon_avg["STATEN ISLAND"]],
                     "Unspecified": [lat_avg["Unspecified"], lon_avg["Unspecified"]]
-                },
-                "mae_heures": self.mae(self.predictions),
-                "mae_reference_heures": self.mae(self.baseline())
+                }
             }
 
             with open(fichier, "w", encoding="utf-8") as f:
