@@ -1,9 +1,3 @@
-"""Interface Streamlit du projet INF1007 : prédiction du délai des plaintes NYC 311.
-
-L'interface utilise le module modele.py du binôme, sans le modifier.
-L'entraînement n'a lieu que si aucun modèle sauvegardé n'est disponible.
-"""
-
 import csv
 import json
 import math
@@ -11,7 +5,6 @@ import os
 from abc import ABC, abstractmethod
 from datetime import date, datetime, time
 from typing import Any
-
 import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -20,8 +13,12 @@ from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.pipeline import Pipeline
-
 from modele import Modele
+
+import logging
+for name, l in logging.root.manager.loggerDict.items():
+    if "streamlit" in name:
+        l.disabled = True
 
 
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +26,6 @@ DOSSIER_MODELES = os.path.join(RACINE, "modeles")
 FICHIER_MODELE = os.path.join(DOSSIER_MODELES, "modele.pk1")
 FICHIER_META = os.path.join(DOSSIER_MODELES, "metadonnees.json")
 FICHIER_HISTORIQUE = os.path.join(DOSSIER_MODELES, "historique_predictions.csv")
-FICHIER_HISTORIQUE_V2 = os.path.join(DOSSIER_MODELES, "historique_predictions_v2.csv")
 FICHIER_DONNEES = os.path.join(RACINE, "donnees", "donnees.csv")
 PROBLEME = "Problem (formerly Complaint Type)"
 CATEGORIELLES = [PROBLEME, "Agency", "Borough"]
@@ -40,7 +36,7 @@ COLONNES_HISTORIQUE = ["Date de prédiction", "Date du signalement", "Agency", P
                        "Created Hour", "Created Minute", "Durée estimée (heures)"]
 
 
-NOMS_AGENCES: dict[str, str] = {
+NOMS_AGENCES = {
     "NYPD": "New York City Police Department (police)",
     "HPD": "Department of Housing Preservation and Development (logement)",
     "DSNY": "Department of Sanitation (propreté et déchets)",
@@ -146,102 +142,21 @@ class Application:
             raise SaisieInvalideError("Le modèle a produit un résultat invalide.")
         return max(0.0, resultat)
 
-
-def verifier_metadonnees(meta: dict) -> None:
-    """Vérifie que le JSON décrit toutes les variables attendues."""
-    if not all(cle in meta for cle in ("colonnes", "categories", "numeriques")):
-        raise ValueError("Le fichier de métadonnées est incomplet.")
-    for nom in meta["colonnes"]:
-        if nom not in meta["categories"] and nom not in meta["numeriques"]:
-            raise ValueError(f"Métadonnées manquantes pour {nom}.")
-    for nom in ("mae_heures", "mae_reference_heures"):
-        if nom not in meta or not math.isfinite(float(meta[nom])):
-            raise ValueError(f"Métrique manquante ou invalide : {nom}.")
-    for nom in CATEGORIELLES:
-        if nom not in meta["categories"] or not meta["categories"][nom]:
-            raise ValueError(f"Catégories manquantes pour {nom}.")
-    for nom in NUMERIQUES:
-        bornes = meta["numeriques"].get(nom)
-        if not isinstance(bornes, list) or len(bornes) != 2:
-            raise ValueError(f"Intervalle manquant pour {nom}.")
-        minimum, maximum = [float(x) for x in bornes]
-        if not math.isfinite(minimum) or not math.isfinite(maximum) or minimum > maximum:
-            raise ValueError(f"Intervalle invalide pour {nom}.")
-
-
-def charger_projet() -> Modele:
-    """Initialise le modèle du binôme depuis la racine du dépôt."""
-    if not os.path.isfile(FICHIER_DONNEES):
-        raise FileNotFoundError(f"Fichier de données introuvable : {FICHIER_DONNEES}")
-    os.chdir(RACINE)
-    return Modele()
-
-
-def creer_metadonnees(projet: Modele, mae: float, mae_reference: float) -> dict[str, Any]:
-    """Déduit les catégories et les coordonnées du jeu réellement chargé."""
-    donnees: pd.DataFrame = projet.X
-    categories: dict[str, list[str]] = {}
-    for nom in CATEGORIELLES:
-        categories[nom] = sorted({str(v) for v in donnees[nom].dropna().unique()
-                                 if str(v).strip()})
-
-    numeriques: dict[str, list[float]] = {
-        "Latitude": [-90.0, 90.0], "Longitude": [-180.0, 180.0],
-        "Created Month": [1.0, 12.0], "Created Day": [1.0, 31.0],
-        "Created Hour": [0.0, 23.0], "Created Minute": [0.0, 59.0]
-    }
-    positions: pd.DataFrame = donnees[["Borough", "Latitude", "Longitude"]].copy()
-    positions["Latitude"] = pd.to_numeric(positions["Latitude"], errors="coerce")
-    positions["Longitude"] = pd.to_numeric(positions["Longitude"], errors="coerce")
-    positions = positions.dropna(subset=["Latitude", "Longitude"])
-    positions = positions.loc[positions["Latitude"].between(-90, 90)
-                              & positions["Longitude"].between(-180, 180)]
-    coordonnees: dict[str, list[float]] = {}
-    for arrondissement, groupe in positions.groupby("Borough"):
-        if pd.notna(arrondissement):
-            coordonnees[str(arrondissement)] = [
-                float(groupe["Latitude"].median()),
-                float(groupe["Longitude"].median())
-            ]
-
-    return {"colonnes": list(projet.features), "categories": categories,
-            "numeriques": numeriques, "coordonnees": coordonnees,
-            "mae_heures": float(mae), "mae_reference_heures": float(mae_reference)}
-
-
 @st.cache_resource
 def charger_application() -> tuple[Application, dict[str, Any]]:
-    """Charge les artefacts existants ou entraîne un équivalent du forest() du binôme.
-
-    Modele.forest() renvoie les prédictions, pas l'estimateur entraîné.
-    On recrée donc exactement son Pipeline ici pour pouvoir le sauvegarder,
-    sans modifier src/modele.py.
-    """
+    """Retourne un objet Application qui est utile pour l'interface graphique"""
     os.makedirs(DOSSIER_MODELES, exist_ok=True)
     if os.path.isfile(FICHIER_MODELE) and os.path.isfile(FICHIER_META):
         modele = joblib.load(FICHIER_MODELE)
         with open(FICHIER_META, "r", encoding="utf-8") as fichier:
             meta = json.load(fichier)
-        verifier_metadonnees(meta)
         return Application(modele, meta), meta
 
-    projet: Modele = charger_projet()
-    modele = Pipeline([
-        ("preprocessing", projet.preprocessor),
-        ("regressor", RandomForestRegressor(
-            n_estimators=200, max_depth=None, min_samples_split=2,
-            min_samples_leaf=2, random_state=42, n_jobs=-1
-        ))
-    ])
-    modele.fit(projet.X_train, projet.y_train)
-    predictions = modele.predict(projet.X_test)
-    mae = float(mean_absolute_error(projet.y_test, predictions))
-    reference = DummyRegressor(strategy="median")
-    reference.fit(projet.X_train, projet.y_train)
-    mae_reference = float(mean_absolute_error(projet.y_test,
-                                              reference.predict(projet.X_test)))
-    meta = creer_metadonnees(projet, mae, mae_reference)
-    verifier_metadonnees(meta)
+    if not os.path.isfile(FICHIER_DONNEES):
+        raise FileNotFoundError(f"Fichier de données introuvable : {FICHIER_DONNEES}")
+    modele = Modele()
+    modele.forest()
+    meta = modele.creer_metadonnees(FICHIER_META, True)
     joblib.dump(modele, FICHIER_MODELE)
     with open(FICHIER_META, "w", encoding="utf-8") as fichier:
         json.dump(meta, fichier, ensure_ascii=False, indent=2)
@@ -256,8 +171,7 @@ def coordonnees_proposees(meta: dict, arrondissement: str) -> tuple[float, float
         if not toutes:
             raise SaisieInvalideError("Coordonnées indisponibles pour cet arrondissement.")
         # Le cas « Unspecified » utilise un centre approximatif du jeu de données.
-        valeurs = [sum(position[i] for position in toutes) / len(toutes)
-                   for i in (0, 1)]
+        valeurs = [sum(position[i] for position in toutes) / len(toutes) for i in (0, 1)]
     return float(valeurs[0]), float(valeurs[1])
 
 
@@ -297,34 +211,18 @@ def lire_entete_historique(chemin: str) -> list[str]:
         return next(csv.reader(fichier), [])
 
 
-def choisir_fichier_historique() -> str:
-    """Conserve l'ancien CSV et utilise un nouveau fichier si son format diffère."""
-    entete = lire_entete_historique(FICHIER_HISTORIQUE)
-    if not entete or entete == COLONNES_HISTORIQUE:
-        return FICHIER_HISTORIQUE
-    ancienne = [colonne for colonne in COLONNES_HISTORIQUE
-               if colonne != "Date du signalement"]
-    if entete != ancienne:
-        raise ValueError("Format d'historique inconnu : aucun fichier n'a été modifié.")
-    nouvelle_entete = lire_entete_historique(FICHIER_HISTORIQUE_V2)
-    if nouvelle_entete and nouvelle_entete != COLONNES_HISTORIQUE:
-        raise ValueError("Le fichier d'historique v2 a un format incompatible.")
-    return FICHIER_HISTORIQUE_V2
-
-
 def enregistrer_prediction(valeurs: dict[str, object], duree: float,
                             date_signalement: datetime) -> None:
     """Ajoute la prédiction sans renommer ni écraser un historique existant."""
     os.makedirs(DOSSIER_MODELES, exist_ok=True)
-    chemin = choisir_fichier_historique()
-    nouveau = not os.path.isfile(chemin) or os.path.getsize(chemin) == 0
+    nouveau = not os.path.isfile(FICHIER_HISTORIQUE) or os.path.getsize(FICHIER_HISTORIQUE) == 0
     ligne: dict[str, object] = {
         "Date de prédiction": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Date du signalement": date_signalement.strftime("%Y-%m-%d %H:%M"),
         **valeurs,
         "Durée estimée (heures)": round(duree, 2),
     }
-    with open(chemin, "a", newline="", encoding="utf-8") as fichier:
+    with open(FICHIER_HISTORIQUE, "a", newline="", encoding="utf-8") as fichier:
         ecrivain = csv.DictWriter(fichier, fieldnames=COLONNES_HISTORIQUE)
         if nouveau:
             ecrivain.writeheader()
@@ -353,20 +251,19 @@ def afficher_historique() -> None:
     historiques: list[pd.DataFrame] = []
     anciens_formats: bool = False
     try:
-        for chemin in (FICHIER_HISTORIQUE, FICHIER_HISTORIQUE_V2):
-            if not os.path.isfile(chemin) or os.path.getsize(chemin) == 0:
-                continue
-            entete: list[str] = lire_entete_historique(chemin)
-            ancienne: list[str] = [colonne for colonne in COLONNES_HISTORIQUE
-                                   if colonne != "Date du signalement"]
-            if entete not in (COLONNES_HISTORIQUE, ancienne):
-                st.warning(f"Historique ignoré (format inattendu) : {os.path.basename(chemin)}")
-                continue
-            tableau: pd.DataFrame = pd.read_csv(chemin, encoding="utf-8-sig")
-            if entete == ancienne:
-                anciens_formats = True
-                tableau["Date du signalement"] = ""
-            historiques.append(tableau.reindex(columns=COLONNES_HISTORIQUE))
+        if not os.path.isfile(FICHIER_HISTORIQUE) or os.path.getsize(FICHIER_HISTORIQUE) == 0:
+            return
+        entete: list[str] = lire_entete_historique(FICHIER_HISTORIQUE)
+        ancienne: list[str] = [colonne for colonne in COLONNES_HISTORIQUE
+                                if colonne != "Date du signalement"]
+        if entete not in (COLONNES_HISTORIQUE, ancienne):
+            st.warning(f"Historique ignoré (format inattendu) : {os.path.basename(FICHIER_HISTORIQUE)}")
+            return
+        tableau: pd.DataFrame = pd.read_csv(FICHIER_HISTORIQUE, encoding="utf-8-sig")
+        if entete == ancienne:
+            anciens_formats = True
+            tableau["Date du signalement"] = ""
+        historiques.append(tableau.reindex(columns=COLONNES_HISTORIQUE))
 
         if not historiques:
             st.info("Aucune prédiction enregistrée pour l'instant.")

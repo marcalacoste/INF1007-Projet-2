@@ -65,15 +65,6 @@ class Modele:
         predictions = model.predict(self.X_test)
         return predictions
 
-    def linear(self):
-        """Retourne les prédictions d'une régression linéaire"""
-        model = Pipeline([("preprocessing", self.preprocessor), ("regressor", LinearRegression())])
-        model.fit(self.X_train, self.y_train)
-        predictions = model.predict(self.X_test)
-        self.modele = model
-        return predictions
-
-
     def forest(self):
         """Retourne les prédictions d'une forêt aléatoire"""
         model = Pipeline([
