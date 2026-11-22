@@ -15,6 +15,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.pipeline import Pipeline
 from modele import Modele
 
+# Pour désactiver tous les warnings de Streamlit
 import logging
 for name, l in logging.root.manager.loggerDict.items():
     if "streamlit" in name:
@@ -34,8 +35,6 @@ NUMERIQUES = ["Latitude", "Longitude", "Created Month", "Created Day",
 COLONNES_HISTORIQUE = ["Date de prédiction", "Date du signalement", "Agency", PROBLEME, "Borough",
                        "Latitude", "Longitude", "Created Month", "Created Day",
                        "Created Hour", "Created Minute", "Durée estimée (heures)"]
-
-
 NOMS_AGENCES = {
     "NYPD": "New York City Police Department (police)",
     "HPD": "Department of Housing Preservation and Development (logement)",
@@ -56,7 +55,7 @@ NOMS_AGENCES = {
 
 def libelle_agence(code: str) -> str:
     """Affiche un nom explicite tout en gardant le code original pour le modèle."""
-    description: str | None = NOMS_AGENCES.get(code)
+    description = NOMS_AGENCES.get(code)
     return f"{code} — {description}" if description else code
 
 
@@ -145,21 +144,19 @@ class Application:
 @st.cache_resource
 def charger_application() -> tuple[Application, dict[str, Any]]:
     """Retourne un objet Application qui est utile pour l'interface graphique"""
+    modele = Modele()
     os.makedirs(DOSSIER_MODELES, exist_ok=True)
     if os.path.isfile(FICHIER_MODELE) and os.path.isfile(FICHIER_META):
-        modele = joblib.load(FICHIER_MODELE)
+        modele.charger_modele()
         with open(FICHIER_META, "r", encoding="utf-8") as fichier:
             meta = json.load(fichier)
         return Application(modele, meta), meta
 
     if not os.path.isfile(FICHIER_DONNEES):
         raise FileNotFoundError(f"Fichier de données introuvable : {FICHIER_DONNEES}")
-    modele = Modele()
     modele.forest()
-    meta = modele.creer_metadonnees(FICHIER_META, True)
-    joblib.dump(modele, FICHIER_MODELE)
-    with open(FICHIER_META, "w", encoding="utf-8") as fichier:
-        json.dump(meta, fichier, ensure_ascii=False, indent=2)
+    modele.sauvegarder_modele()
+    meta = modele.creer_metadonnees(FICHIER_META, force = True)
     return Application(modele, meta), meta
 
 
@@ -178,7 +175,7 @@ def coordonnees_proposees(meta: dict, arrondissement: str) -> tuple[float, float
 @st.cache_data(show_spinner=False)
 def agences_par_probleme(chemin: str, modification: float) -> dict[str, list[str]]:
     """Associe chaque problème aux agences observées dans le fichier 311."""
-    associations: dict[str, set[str]] = {}
+    associations = {}
     for bloc in pd.read_csv(chemin, usecols=[PROBLEME, "Agency"], chunksize=50000):
         for probleme, agence in bloc[[PROBLEME, "Agency"]].dropna().itertuples(index=False, name=None):
             cle, valeur = str(probleme).strip(), str(agence).strip()
@@ -216,7 +213,7 @@ def enregistrer_prediction(valeurs: dict[str, object], duree: float,
     """Ajoute la prédiction sans renommer ni écraser un historique existant."""
     os.makedirs(DOSSIER_MODELES, exist_ok=True)
     nouveau = not os.path.isfile(FICHIER_HISTORIQUE) or os.path.getsize(FICHIER_HISTORIQUE) == 0
-    ligne: dict[str, object] = {
+    ligne = {
         "Date de prédiction": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Date du signalement": date_signalement.strftime("%Y-%m-%d %H:%M"),
         **valeurs,
@@ -229,13 +226,13 @@ def enregistrer_prediction(valeurs: dict[str, object], duree: float,
         ecrivain.writerow(ligne)
 
 
-def afficher_graphique(meta: dict) -> None:
+def afficher_graphique(application: Application, meta: dict, probleme: str) -> None:
     """Compare les erreurs du Random Forest et du modèle de référence."""
-    mae = float(meta["mae_heures"])
-    reference = float(meta["mae_reference_heures"])
+    donnees = application._modele.donnees.data
+    donnees = donnees.data[donnees.data["Problem (formerly Complaint Type)"] == probleme]
+    
     fig, ax = plt.subplots(figsize=(7, 3))
-    ax.barh(["Référence", "Random Forest"], [reference, mae],
-            label="Erreur moyenne absolue")
+    ax.scatter(donnees)
     ax.set_title("Erreur moyenne des modèles")
     ax.set_xlabel("MAE (heures) — plus petit = meilleur")
     ax.set_ylabel("Modèle")
@@ -248,18 +245,18 @@ def afficher_graphique(meta: dict) -> None:
 def afficher_historique() -> None:
     """Affiche une synthèse compacte, et garde tous les détails exportables."""
     st.subheader("Historique des prédictions")
-    historiques: list[pd.DataFrame] = []
-    anciens_formats: bool = False
+    historiques = []
+    anciens_formats = False
     try:
         if not os.path.isfile(FICHIER_HISTORIQUE) or os.path.getsize(FICHIER_HISTORIQUE) == 0:
             return
-        entete: list[str] = lire_entete_historique(FICHIER_HISTORIQUE)
-        ancienne: list[str] = [colonne for colonne in COLONNES_HISTORIQUE
+        entete = lire_entete_historique(FICHIER_HISTORIQUE)
+        ancienne = [colonne for colonne in COLONNES_HISTORIQUE
                                 if colonne != "Date du signalement"]
         if entete not in (COLONNES_HISTORIQUE, ancienne):
             st.warning(f"Historique ignoré (format inattendu) : {os.path.basename(FICHIER_HISTORIQUE)}")
             return
-        tableau: pd.DataFrame = pd.read_csv(FICHIER_HISTORIQUE, encoding="utf-8-sig")
+        tableau = pd.read_csv(FICHIER_HISTORIQUE, encoding="utf-8-sig")
         if entete == ancienne:
             anciens_formats = True
             tableau["Date du signalement"] = ""
@@ -269,10 +266,10 @@ def afficher_historique() -> None:
             st.info("Aucune prédiction enregistrée pour l'instant.")
             return
 
-        historique: pd.DataFrame = pd.concat(historiques, ignore_index=True)
+        historique = pd.concat(historiques, ignore_index=True)
         historique = historique.sort_values("Date de prédiction", ascending=False,
                                             kind="stable").reset_index(drop=True)
-        colonnes_essentielles: dict[str, str] = {
+        colonnes_essentielles = {
             "Date de prédiction": "Prédiction le",
             "Date du signalement": "Signalement le",
             PROBLEME: "Type de problème",
@@ -280,7 +277,7 @@ def afficher_historique() -> None:
             "Borough": "Arrondissement",
             "Durée estimée (heures)": "Durée (h)",
         }
-        resume: pd.DataFrame = historique[list(colonnes_essentielles)].rename(
+        resume = historique[list(colonnes_essentielles)].rename(
             columns=colonnes_essentielles).copy()
         resume["Durée (h)"] = pd.to_numeric(resume["Durée (h)"], errors="coerce")
         st.dataframe(
@@ -320,17 +317,17 @@ def page_prediction(application: Application, meta: dict) -> None:
     """Collecte les caractéristiques, puis enregistre la prédiction."""
     st.subheader("Informations sur la plainte")
     st.caption("Choisissez d'abord le problème : les agences proposées s'adaptent immédiatement.")
-    probleme: str = st.selectbox("Type de problème", meta["categories"][PROBLEME])
+    probleme = st.selectbox("Type de problème", meta["categories"][PROBLEME])
     choix_agences, association_verifiee = choisir_agences(meta, probleme)
-    agence: str = st.selectbox("Agence responsable", choix_agences,
+    agence = st.selectbox("Agence responsable", choix_agences,
                                format_func=libelle_agence, key=f"agence_{probleme}")
     if not association_verifiee:
         st.caption("Correspondance non vérifiée dans les données : toutes les agences compatibles sont proposées.")
     arrondissement: str = st.selectbox("Arrondissement", meta["categories"]["Borough"])
     with st.form("plainte"):
-        date_signalement: date = st.date_input("Date du signalement", value=date.today())
-        heure_signalement: time = st.time_input("Heure du signalement", value=time(12, 0), step=60)
-        automatique: bool = st.checkbox("Coordonnées approximatives automatiques", value=True)
+        date_signalement = st.date_input("Date du signalement", value=date.today())
+        heure_signalement = st.time_input("Heure du signalement", value=time(12, 0), step=60)
+        automatique = st.checkbox("Coordonnées approximatives automatiques", value=True)
         if automatique:
             try:
                 latitude, longitude = coordonnees_proposees(meta, arrondissement)
@@ -343,19 +340,19 @@ def page_prediction(application: Application, meta: dict) -> None:
             lon_min, lon_max = meta["numeriques"]["Longitude"]
             latitude = st.text_input("Latitude", help=f"Entre {lat_min:g} et {lat_max:g}")
             longitude = st.text_input("Longitude", help=f"Entre {lon_min:g} et {lon_max:g}")
-        envoyer: bool = st.form_submit_button("Prédire la durée", type="primary")
+        envoyer = st.form_submit_button("Prédire la durée", type="primary")
 
     if not envoyer:
         return
-    date_complete: datetime = datetime.combine(date_signalement, heure_signalement)
-    valeurs: dict[str, object] = {
+    date_complete = datetime.combine(date_signalement, heure_signalement)
+    valeurs = {
         "Agency": agence, PROBLEME: probleme, "Borough": arrondissement,
         "Latitude": latitude, "Longitude": longitude,
         "Created Month": date_complete.month, "Created Day": date_complete.day,
         "Created Hour": date_complete.hour, "Created Minute": date_complete.minute
     }
     try:
-        duree: float = application.predire(valeurs)
+        duree = application.predire(valeurs)
     except (SaisieInvalideError, ValueError, TypeError) as erreur:
         st.error(str(erreur))
         return
@@ -373,10 +370,10 @@ def page_prediction(application: Application, meta: dict) -> None:
     st.rerun()
 
 
-def page_resultats(meta: dict) -> None:
+def page_resultats(application: Application, meta: dict) -> None:
     """Présente le dernier résultat et les performances sur une page indépendante."""
     st.subheader("Résultats")
-    resultat: dict | None = st.session_state.get("dernier_resultat")
+    resultat = st.session_state.get("dernier_resultat")
     if resultat is None:
         st.info("Effectuez une prédiction pour afficher son résultat ici.")
     else:
@@ -395,7 +392,7 @@ def page_resultats(meta: dict) -> None:
     st.subheader("Performance du modèle")
     st.write(f"Random Forest : **{meta['mae_heures']:.1f} h** d'erreur moyenne ; "
              f"référence : **{meta['mae_reference_heures']:.1f} h**.")
-    afficher_graphique(meta)
+    afficher_graphique(application, meta, resultat['probleme'])
 
 
 def main() -> None:
@@ -416,11 +413,11 @@ def main() -> None:
     except (OSError, ValueError, KeyError, ImportError, AttributeError, json.JSONDecodeError) as erreur:
         st.error(f"Impossible de charger le modèle : {erreur}")
         st.stop()
-    page: str = st.session_state["page_active"]
+    page = st.session_state["page_active"]
     if page == "Prédiction":
         page_prediction(application, meta)
     elif page == "Résultats":
-        page_resultats(meta)
+        page_resultats(application, meta)
     else:
         afficher_historique()
 
