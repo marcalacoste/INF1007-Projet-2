@@ -16,13 +16,13 @@ def modele_sans_chargement(y_train: list[float], y_test: list[float]) -> Modele:
     return modele
 
 
-def test_baseline_utilise_moyenne() -> None:
+def test_baseline_utilise_moyenne():
     """La référence doit prédire la moyenne du jeu d'entraînement."""
     modele = modele_sans_chargement([2, 4, 100], [1, 7])
     assert modele.baseline() == pytest.approx([35+1/3, 35+1/3])
 
 
-def test_baseline_taille_predictions() -> None:
+def test_baseline_taille_predictions():
     """La référence fournit une prédiction pour chaque ligne de test."""
     modele = modele_sans_chargement([1, 3, 5, 7], [2, 8, 10])
     predictions = modele.baseline()
@@ -30,26 +30,26 @@ def test_baseline_taille_predictions() -> None:
     assert np.isfinite(predictions).all()
 
 
-def test_mae_valeur_connue() -> None:
+def test_mae_valeur_connue():
     """La MAE correspond à la moyenne des écarts absolus."""
     modele = modele_sans_chargement([1, 2], [2, 4, 8])
     assert modele.mae(np.array([3, 1, 10])) == pytest.approx(2.0)
 
 
-def test_mae_predictions_exactes() -> None:
+def test_mae_predictions_exactes():
     """Une prédiction parfaite produit une MAE nulle."""
     modele = modele_sans_chargement([1, 2], [2, 4, 8])
     assert modele.mae(np.array([2, 4, 8])) == pytest.approx(0.0)
 
 
-def test_mae_taille_incompatible() -> None:
+def test_mae_taille_incompatible():
     """Une erreur est levée si la taille des prédictions diffère."""
     modele = modele_sans_chargement([1, 2], [2, 4, 8])
     with pytest.raises(ValueError):
         modele.mae(np.array([2, 4]))
 
 
-def test_mae_valeur_negative() -> None:
+def test_mae_valeur_negative():
     """La métrique prend la valeur absolue des écarts, même sous zéro."""
     modele = modele_sans_chargement([1, 2], [-2, 2])
     assert modele.mae(np.array([2, -2])) == pytest.approx(4.0)

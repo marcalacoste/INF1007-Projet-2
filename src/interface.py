@@ -115,7 +115,7 @@ class VariableNumerique(Variable):
 class Application:
     """Contient le modèle et les objets qui valident chaque caractéristique."""
 
-    def __init__(self, modele: Modele, metadonnees: dict) -> None:
+    def __init__(self, modele: Modele, metadonnees: dict):
         self._modele = modele
         self._metadonnees = metadonnees
         self._variables = {}
@@ -207,7 +207,7 @@ def lire_entete_historique(chemin: str) -> list[str]:
 
 
 def enregistrer_prediction(valeurs: dict[str, object], duree: float,
-                            date_signalement: datetime) -> None:
+                            date_signalement: datetime):
     """Ajoute la prédiction sans renommer ni écraser un historique existant."""
     os.makedirs(DOSSIER_MODELES, exist_ok=True)
     nouveau = not os.path.isfile(FICHIER_HISTORIQUE) or os.path.getsize(FICHIER_HISTORIQUE) == 0
@@ -224,7 +224,7 @@ def enregistrer_prediction(valeurs: dict[str, object], duree: float,
         ecrivain.writerow(ligne)
 
 
-def afficher_graphique(application: Application, resultat) -> None:
+def afficher_graphique(application: Application, resultat):
     """Compare les erreurs du Random Forest et du modèle de référence."""
     donnees = application._donnees
     donnees = donnees.data[donnees.data["Problem (formerly Complaint Type)"] == resultat["probleme"]]
@@ -241,7 +241,7 @@ def afficher_graphique(application: Application, resultat) -> None:
     plt.close(fig)
 
 
-def afficher_historique() -> None:
+def afficher_historique() :
     """Affiche une synthèse compacte, et garde tous les détails exportables."""
     st.subheader("Historique des prédictions")
     historiques = []
@@ -307,12 +307,12 @@ def afficher_historique() -> None:
         st.warning(f"Historique indisponible : {erreur}")
 
 
-def changer_page(page: str) -> None:
+def changer_page(page: str) :
     """Change de page sans effacer le résultat conservé en session."""
     st.session_state["page_active"] = page
 
 
-def page_prediction(application: Application, meta: dict) -> None:
+def page_prediction(application: Application, meta: dict) :
     """Collecte les caractéristiques, puis enregistre la prédiction."""
     st.subheader("Informations sur la plainte")
     st.caption("Choisissez d'abord le problème : les agences proposées s'adaptent immédiatement.")
