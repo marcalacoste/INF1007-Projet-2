@@ -14,3 +14,14 @@ TODO: Montrer erreurs sur données test, expliquer si et comment améliorer les 
 
 
 ### Volet 3
+Nous avons choisi d'utiliser Streamlit pour développer notre interface graphique, car cette bibliothèque permet de créer facilement une application web en Python, avec des formulaires et des graphiques Matplotlib. Nous avions également envisagé Tkinter, mais Streamlit nous semblait plus adapté à notre projet. Notre objectif était de rendre l'interface aussi claire et intuitive que possible. Après validation avec le professeur, nous avons décidé de l'organiser en trois pages : Prédiction, Résultats et Historique, afin de faciliter la navigation.
+
+Pour la saisie des informations, nous avons utilisé des listes déroulantes pour les variables catégorielles, comme le type de problème, l'agence et l'arrondissement, ainsi que des champs adaptés pour la date et l'heure. Nous avons également choisi de filtrer les agences selon le problème sélectionné pour éviter de proposer des choix inutiles.
+
+Une difficulté concernait la latitude et la longitude, que l'utilisateur devait initialement entrer manuellement. Comme cette solution n'était pas très pratique, nous avons ajouté une option proposant des coordonnées approximatives selon l'arrondissement choisi, calculées à partir des données historiques. Nous avons tout de même conservé la saisie manuelle pour les utilisateurs qui connaissent leurs coordonnées.
+
+Nous avons également utilisé `st.session_state` pour conserver la dernière prédiction lorsque l'utilisateur change de page, et `st.cache_resource` pour éviter de recharger inutilement le modèle à chaque interaction. Ces deux fonctionnalités permettent de rendre l'application plus pratique et plus fluide.
+
+Pour présenter les résultats, nous avons choisi d'afficher la durée estimée en heures et en jours, accompagnée d'un graphique Matplotlib représentant les durées historiques de résolution pour le même type de problème. Une ligne verticale indique la prédiction pour permettre à l'utilisateur de la situer par rapport aux anciennes plaintes. Nous avons préféré cette visualisation à une simple comparaison des erreurs des modèles, car elle est plus utile pour l'utilisateur. Nous précisons également que le résultat reste une estimation et non un délai garanti.
+
+Enfin, nous avons décidé d'enregistrer les prédictions dans un fichier CSV plutôt que de les conserver uniquement en mémoire. L'utilisateur peut ainsi retrouver ses anciennes prédictions dans la page Historique et télécharger le fichier. Ce choix permet de conserver les résultats même après la fermeture de l'application.
