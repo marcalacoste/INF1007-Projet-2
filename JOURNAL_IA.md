@@ -1,3 +1,7 @@
+### Volet 2 - Utilisation de l'IA
+J'ai demandé à ChatGPT comment commencer pour l'entraînement du modèle et quels sont les étapes importantes. Ensuite, je suis allé vérifier avec la documentation officielle de sckit-learn pour les différentes suggestions données par l'IA, comme ColumnTransformer, SimpleImputer ou OneHotEncoder.
+
+
 ### Volet 3 — Utilisation de l'IA
 
 
