@@ -10,6 +10,7 @@ import pandas as pd
 import streamlit as st
 from modele import Modele
 from donnees import JeuDeDonnees
+from exceptions import SaisieInvalideError
 
 # Pour désactiver tous les warnings de Streamlit
 import logging
@@ -53,10 +54,6 @@ def libelle_agence(code: str) -> str:
     """Affiche un nom explicite tout en gardant le code original pour le modèle."""
     description = NOMS_AGENCES.get(code)
     return f"{code} — {description}" if description else code
-
-
-class SaisieInvalideError(ValueError):
-    """Erreur levée lorsqu'une caractéristique n'est pas autorisée."""
 
 
 class Variable(ABC):
@@ -417,4 +414,7 @@ def preparer_interface_graphique():
         page_resultats(application)
     else:
         afficher_historique()
+
+if __name__ == "__main__":
+    preparer_interface_graphique()
 

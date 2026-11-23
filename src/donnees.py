@@ -39,6 +39,8 @@ class JeuDeDonnees:
         """Affiche dans le terminal différentes satistiques sur le jeu de données"""
         print(self.data.head())
         print(self.data.info())
+        print(f"Moyenne = {self.data["Resolution Time (hours)"].mean()}")
+        print(f"Max = {self.data["Resolution Time (hours)"].max()}")
 
     def drop_colonnes_inutiles(self):
         """Enlève toutes les colonnes qui ne sont pas dans
@@ -122,7 +124,7 @@ class JeuDeDonnees:
     def enlever_temps_resolution_hauts(self, limite):
         if limite <= 0:
             raise ValueError("La limite doit être plus grande que 0")
-        if not "Resolution Time (hours)" in self.data.index:
+        if not "Resolution Time (hours)" in self.data.columns:
             raise ValueError("La colonne du temps de résolution n'existe pas encore dans le jeu de données")
         rows = self.data[self.data["Resolution Time (hours)"] > limite].index
         self.data.drop(rows, inplace = True)

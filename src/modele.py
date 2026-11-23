@@ -111,7 +111,7 @@ class Modele:
         else:
             raise FileNotFoundError("Il n'y a pas de modèle à charger dans le dossier modeles")
 
-    def creer_metadonnees(self, fichier: str, force: bool = False) -> dict:
+    def creer_metadonnees(self, fichier: str, force: bool = False) -> dict | None:
         """Crée le fichier de metadonnées
         
         Ne va pas sauvegarder si le fichier existe déjà, à moins que force == True"""
@@ -156,5 +156,6 @@ class Modele:
 
             with open(fichier, "w", encoding="utf-8") as f:
                 json.dump(meta, f, ensure_ascii=False, indent=2)
-        return meta
+            return meta
+        return None
     

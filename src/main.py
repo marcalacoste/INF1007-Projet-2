@@ -12,11 +12,18 @@ donnees = JeuDeDonnees(FICHIER_DONNEES)
 donnees.setup_donnees(50000)
 donnees.show_statistics()
 donnees.creer_graphique()
+donnees.show_statistics()
+donnees.enlever_temps_resolution_hauts(1000)
+donnees.show_statistics()
 
 modele = Modele()
 modele.forest()
 modele.sauvegarder_modele()
 modele.charger_modele()
 modele.creer_metadonnees(FICHIER_META)
+print(modele.mae(modele.predictions))
+print(modele.mae(modele.baseline()))
 
+
+assert 1==0
 preparer_interface_graphique()
