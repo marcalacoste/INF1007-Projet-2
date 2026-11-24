@@ -12,7 +12,6 @@ donnees = JeuDeDonnees(FICHIER_DONNEES)
 donnees.setup_donnees(50000)
 donnees.montrer_statistiques()
 donnees.creer_graphique()
-donnees.montrer_statistiques()
 
 modele = Modele()
 modele.forest()

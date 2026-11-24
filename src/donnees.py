@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import datetime
+import numpy as np
 
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FICHIER_GRAPHIQUE = os.path.join(RACINE, "donnees", "graphique.png")
@@ -39,7 +40,7 @@ class JeuDeDonnees:
         """Affiche dans le terminal différentes satistiques sur le jeu de données"""
         print(self.data.head())
         print(self.data.info())
-        print(f"Moyenne = {self.data["Resolution Time (hours)"].mean()}")
+        print(f"Moyenne = {self.moyenne()}")
         print(f"Max = {self.data["Resolution Time (hours)"].max()}")
 
     def drop_colonnes_inutiles(self):
@@ -106,6 +107,8 @@ class JeuDeDonnees:
     def moyenne(self) -> int:
         """Retourne la moyenne du temps de résolution"""
         total = 0
+        if len(self) == 0:
+            return 0
         for _, row in self.data.iterrows():
             total += row["Resolution Time (hours)"]
         return total/len(self)
@@ -120,6 +123,7 @@ class JeuDeDonnees:
         self.drop_lignes_incompletes()
         self.calculer_temps_resolution()
         self.ajouter_donnees_creation()
+        self.ignorer_top(90)
 
     def enlever_temps_resolution_hauts(self, limite: int):
         if limite <= 0:
@@ -129,6 +133,14 @@ class JeuDeDonnees:
         rows = self.data[self.data["Resolution Time (hours)"] > limite].index
         self.data.drop(rows, inplace = True)
 
+    def ignorer_top(self, pourcentage):
+        """Enlève les valeurs les plus haute pour chaque catégorie de problème"""
+        if pourcentage > 100 or pourcentage < 0:
+            raise ValueError("Veuillez entrer un pourcentage valide")
+        seuils = (self.data.groupby("Problem (formerly Complaint Type)")["Resolution Time (hours)"]
+                  .transform(lambda x: x.quantile(pourcentage/100)))
+
+        self.data = self.data[self.data["Resolution Time (hours)"] <= seuils        ]
     
 
 
