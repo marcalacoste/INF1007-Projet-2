@@ -10,9 +10,9 @@ FICHIER_META = os.path.join(DOSSIER_MODELES, "metadonnees.json")
 
 donnees = JeuDeDonnees(FICHIER_DONNEES)
 donnees.setup_donnees(50000)
-donnees.show_statistics()
+donnees.montrer_statistiques()
 donnees.creer_graphique()
-donnees.show_statistics()
+donnees.montrer_statistiques()
 
 modele = Modele()
 modele.forest()

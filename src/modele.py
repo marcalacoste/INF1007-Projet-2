@@ -59,7 +59,7 @@ class Modele:
 
         self.numeric_pipeline = Pipeline([("imputer", SimpleImputer(strategy="mean"))])
         self.categorical_pipeline = Pipeline([("imputer", SimpleImputer(strategy="most_frequent")), ("encoder", OneHotEncoder(handle_unknown="ignore"))])
-        self.preprocessor = ColumnTransformer([("numeric", self.numeric_pipeline,self. numeric_features), ("categorical", self.categorical_pipeline, self.categorical_features)])
+        self.preprocessor = ColumnTransformer([("numeric", self.numeric_pipeline, self.numeric_features), ("categorical", self.categorical_pipeline, self.categorical_features)])
 
         self.modele = None
         self.predictions = None

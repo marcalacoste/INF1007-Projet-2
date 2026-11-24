@@ -203,8 +203,7 @@ def lire_entete_historique(chemin: str) -> list[str]:
         return next(csv.reader(fichier), [])
 
 
-def enregistrer_prediction(valeurs: dict[str, object], duree: float,
-                            date_signalement: datetime):
+def enregistrer_prediction(valeurs: dict[str, object], duree: float, date_signalement: datetime):
     """Ajoute la prédiction sans renommer ni écraser un historique existant."""
     os.makedirs(DOSSIER_MODELES, exist_ok=True)
     nouveau = not os.path.isfile(FICHIER_HISTORIQUE) or os.path.getsize(FICHIER_HISTORIQUE) == 0
@@ -222,7 +221,7 @@ def enregistrer_prediction(valeurs: dict[str, object], duree: float,
 
 
 def afficher_graphique(application: Application, resultat):
-    """Compare les erreurs du Random Forest et du modèle de référence."""
+    """Affiche la prédiction du modèle par rapport au reste des données."""
     donnees = application._donnees
     donnees = donnees.data[donnees.data["Problem (formerly Complaint Type)"] == resultat["probleme"]]
     

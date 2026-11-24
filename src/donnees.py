@@ -28,14 +28,14 @@ class JeuDeDonnees:
         self.file = open(path, "r", encoding = "utf8")
         self.data = pd.read_csv(self.file, low_memory = False)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data.index)
 
     def head(self, quantite_a_garder: int):
         """Sélectionne seulement les premières lignes des données"""
         self.data = self.data.head(quantite_a_garder)
 
-    def show_statistics(self):
+    def montrer_statistiques(self):
         """Affiche dans le terminal différentes satistiques sur le jeu de données"""
         print(self.data.head())
         print(self.data.info())
@@ -71,7 +71,7 @@ class JeuDeDonnees:
         """Calcule et ajoute le temps de résolution de la plainte au jeu de données"""
         format = "%m/%d/%Y %I:%M:%S %p"
         valeurs = []
-        for index, row in self.data.iterrows():
+        for _, row in self.data.iterrows():
             cree = datetime.datetime.strptime(row["Created Date"], format)
             ferme = datetime.datetime.strptime(row["Closed Date"], format)
 
@@ -106,7 +106,7 @@ class JeuDeDonnees:
     def moyenne(self) -> int:
         """Retourne la moyenne du temps de résolution"""
         total = 0
-        for index, row in self.data.iterrows():
+        for _, row in self.data.iterrows():
             total += row["Resolution Time (hours)"]
         return total/len(self)
 
@@ -121,7 +121,7 @@ class JeuDeDonnees:
         self.calculer_temps_resolution()
         self.ajouter_donnees_creation()
 
-    def enlever_temps_resolution_hauts(self, limite):
+    def enlever_temps_resolution_hauts(self, limite: int):
         if limite <= 0:
             raise ValueError("La limite doit être plus grande que 0")
         if not "Resolution Time (hours)" in self.data.columns:
